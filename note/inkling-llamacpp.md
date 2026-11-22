@@ -3,13 +3,15 @@
 Domenica 22 novembre 2026. File: `Inkling-2-Mini-IQ4_NL.gguf` (17,6 GB; 26B totali, 3B attivi, 128 esperti, 24 layer).
 llama.cpp build `b12607-1fdda89a4`, avviato con `llama serve`.
 
-## Comando che funziona
+## Comando definitivo
 
 ```bash
 llama serve -m ~/models/inkling2mini/Inkling-2-Mini-IQ4_NL.gguf \
-  -ngl 99 --n-cpu-moe 24 -c 8192 -fa on -ub 256 --no-op-offload \
+  -ngl 99 --n-cpu-moe 22 -c 16384 -fa on -ub 256 --no-op-offload \
   --jinja --port 8080
 ```
+
+19,2 token/s in generazione, 6732 MiB di VRAM su 8192 (desktop compreso). Se serve più margine in VRAM: `--n-cpu-moe 24` (17,9 token/s, 4686 MiB).
 
 ## Cosa riempie la VRAM
 
@@ -49,6 +51,12 @@ Prova A: raddoppiare il contesto (8192 → 16384) costa circa 620 MiB di VRAM e 
 
 Prova B (`--n-cpu-moe 20`, `-c 16384`): **non parte**. I pesi entrano, poi manca la memoria per la KV cache (`allocating 680.00 MiB ... failed to allocate buffer for kv cache`). I 680 MiB tornano con i circa 620 MiB misurati nella prova A per passare da 8k a 16k di contesto. Quindi 4 layer di esperti pesano più dei 2,5 GB stimati: probabilmente almeno 0,7 GB per layer (deduzione, non misura).
 
+| 22 | 16384 | no | 6732 MiB | 19,2 | 42,0 | prova B2; mediana con `temperature` 0, 558 token, finita da sola (`stop`); GPU 39-40%, 67-76 W; esempi corretti |
+
+Prova B2: 2 layer di esperti in GPU costano circa 2050 MiB (da 4686 a 6732), quindi **circa 1 GB per layer**. Il guadagno è del 7% (da 17,9 a 19,2 token/s). Torna con le proporzioni: 2 layer su 24 sono l'8% degli esperti spostati sulla GPU. La velocità la decide la parte che resta in RAM, calcolata dalla CPU.
+
+Un altro layer (`--n-cpu-moe 21`) porterebbe la VRAM intorno a 7,7 GB: troppo vicino al limite con il desktop acceso. Ci si ferma qui.
+
 Qualità della risposta sulla mediana: codice corretto (copia l'array, ordina numerico, gestisce pari/dispari, errore su array vuoto), ragionamento in inglese e risposta in italiano. Però uno dei tre esempi nei commenti è sbagliato: scrive `median([4, 1, 7, 2]); // 2.5`, ma la sua stessa funzione dà 3 (ordinato 1, 2, 4, 7 → (2+4)/2). Verificato eseguendo il codice con Node. È proprio il tipo di errore che il banco del passo 6 deve trovare: gli esempi si controllano con i test, non leggendoli.
 
 Durante la generazione: GPU al 37%, 73 W. RAM: `used` 9,2 GiB, `buff/cache` 20 GiB (il modello è caricato con mmap, quindi lo vedi come cache), `available` 21 GiB, swap 3 MiB.
@@ -69,9 +77,7 @@ Regola: dopo ogni download, `sha256sum` prima di lanciare qualunque cosa. llama.
 
 Il log di `wget` restava vuoto (solo "nohup: input ignorato"): probabilmente è wget2, che non scrive l'avanzamento senza terminale. L'avanzamento si ricava dalla dimensione del file.
 
-## Prossime prove
+## Prossime prove (facoltative)
 
-1. `-c 16384`: annota quanto sale la VRAM.
-2. `--n-cpu-moe 20`, poi 18, poi 16, finché la VRAM resta sotto 7,3 GB circa. Stima (non misurata): 0,6-0,7 GB per layer di esperti.
-3. Ripetere la misura con un prompt lungo (qualche migliaio di token) per avere un token/s del prompt sensato.
-4. Provare `reasoning_effort` low per vedere se la risposta sta dentro gli 800 token.
+1. Ripetere la misura con un prompt lungo (qualche migliaio di token) per avere un token/s del prompt sensato.
+2. Provare `reasoning_effort` low per vedere se la risposta sta dentro gli 800 token.
