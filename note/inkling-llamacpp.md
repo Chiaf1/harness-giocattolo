@@ -43,6 +43,10 @@ Prompt: "Scrivi una funzione TypeScript che restituisce la mediana di un array d
 | 24 | 8192 | no | | 17,7 | 36,7 | file giusto; prompt di `prova.sh` (29 token), 60 token generati |
 | 24 | 8192 | no | 4062 MiB (2920 MiB) | 18,1 | 39,8 | file giusto; prompt mediana (20 token), 579 token generati, finito da solo (`stop`); GPU 38-39%, 53-71 W |
 
+| 24 | 16384 | no | 4686 MiB | 17,9 | 40,4 | prova A; mediana tagliata a 800 token (`length`): il ragionamento ha riscritto il codice due volte, con lunghe file di spazi in mezzo |
+
+Prova A: raddoppiare il contesto (8192 → 16384) costa circa 620 MiB di VRAM e non cambia la velocità. La risposta tagliata non dipende da `-c`: la curl non fissa `temperature`, quindi ogni risposta è diversa, e questa volta il ragionamento è stato più lungo. Dalla prova B in poi la curl della mediana usa `temperature` 0 e `max_tokens` 1500, così le risposte sono confrontabili e il modello ha spazio per finire.
+
 Qualità della risposta sulla mediana: codice corretto (copia l'array, ordina numerico, gestisce pari/dispari, errore su array vuoto), ragionamento in inglese e risposta in italiano. Però uno dei tre esempi nei commenti è sbagliato: scrive `median([4, 1, 7, 2]); // 2.5`, ma la sua stessa funzione dà 3 (ordinato 1, 2, 4, 7 → (2+4)/2). Verificato eseguendo il codice con Node. È proprio il tipo di errore che il banco del passo 6 deve trovare: gli esempi si controllano con i test, non leggendoli.
 
 Durante la generazione: GPU al 37%, 73 W. RAM: `used` 9,2 GiB, `buff/cache` 20 GiB (il modello è caricato con mmap, quindi lo vedi come cache), `available` 21 GiB, swap 3 MiB.
