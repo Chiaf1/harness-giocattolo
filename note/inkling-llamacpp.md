@@ -47,6 +47,8 @@ Prompt: "Scrivi una funzione TypeScript che restituisce la mediana di un array d
 
 Prova A: raddoppiare il contesto (8192 → 16384) costa circa 620 MiB di VRAM e non cambia la velocità. La risposta tagliata non dipende da `-c`: la curl non fissa `temperature`, quindi ogni risposta è diversa, e questa volta il ragionamento è stato più lungo. Dalla prova B in poi la curl della mediana usa `temperature` 0 e `max_tokens` 1500, così le risposte sono confrontabili e il modello ha spazio per finire.
 
+Prova B (`--n-cpu-moe 20`, `-c 16384`): **non parte**. I pesi entrano, poi manca la memoria per la KV cache (`allocating 680.00 MiB ... failed to allocate buffer for kv cache`). I 680 MiB tornano con i circa 620 MiB misurati nella prova A per passare da 8k a 16k di contesto. Quindi 4 layer di esperti pesano più dei 2,5 GB stimati: probabilmente almeno 0,7 GB per layer (deduzione, non misura).
+
 Qualità della risposta sulla mediana: codice corretto (copia l'array, ordina numerico, gestisce pari/dispari, errore su array vuoto), ragionamento in inglese e risposta in italiano. Però uno dei tre esempi nei commenti è sbagliato: scrive `median([4, 1, 7, 2]); // 2.5`, ma la sua stessa funzione dà 3 (ordinato 1, 2, 4, 7 → (2+4)/2). Verificato eseguendo il codice con Node. È proprio il tipo di errore che il banco del passo 6 deve trovare: gli esempi si controllano con i test, non leggendoli.
 
 Durante la generazione: GPU al 37%, 73 W. RAM: `used` 9,2 GiB, `buff/cache` 20 GiB (il modello è caricato con mmap, quindi lo vedi come cache), `available` 21 GiB, swap 3 MiB.
