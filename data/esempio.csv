@@ -1,0 +1,13 @@
+id,nome,categoria,quantita,prezzo
+1,Matita,cancelleria,40,0.5
+2,Quaderno,cancelleria,25,2.8
+3,Gomma,cancelleria,30,0.9
+4,Tazza,cucina,12,6.5
+5,Cucchiaio,cucina,50,1.2
+6,Padella,cucina,6,24
+7,Lampada,casa,8,18.9
+8,Cuscino,casa,15,12.5
+9,Coperta,casa,5,32
+10,Pallone,sport,10,15
+11,Corda,sport,20,7.4
+12,Borraccia,sport,18,9.9
