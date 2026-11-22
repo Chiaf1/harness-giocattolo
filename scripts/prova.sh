@@ -3,7 +3,7 @@
 # Uso: ./scripts/prova.sh [porta]   (predefinita 8080)
 PORTA="${1:-8080}"
 curl -s "localhost:${PORTA}/v1/chat/completions" -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Qual è la capitale della Francia? Rispondi in una frase."}],"max_tokens":60,"temperature":0}' \
+  -d '{"messages":[{"role":"user","content":"Qual è la capitale della Francia? Rispondi in una frase."}],"max_tokens":400,"temperature":0}' \
   | python3 -c '
 import sys, json
 r = json.load(sys.stdin)

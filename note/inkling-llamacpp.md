@@ -39,23 +39,28 @@ Prompt: "Scrivi una funzione TypeScript che restituisce la mediana di un array d
 
 | --n-cpu-moe | -c | op offload | VRAM totale (llama) | token/s gen | token/s prompt | note |
 |---|---|---|---|---|---|---|
-| 24 | 8192 | no | 3750 MiB (2920 MiB) | 18,1 | 39,4 | prompt di soli 32 token, il token/s del prompt non è affidabile; risposta tagliata a 800 token |
+| 24 | 8192 | no | 3750 MiB (2920 MiB) | 18,1 | 39,4 | **file corrotto**, misura provvisoria; prompt di soli 32 token; risposta tagliata a 800 token |
+| 24 | 8192 | no | | 17,7 | 36,7 | file giusto; prompt di `prova.sh` (29 token), 60 token generati |
 
 Durante la generazione: GPU al 37%, 73 W. RAM: `used` 9,2 GiB, `buff/cache` 20 GiB (il modello è caricato con mmap, quindi lo vedi come cache), `available` 21 GiB, swap 3 MiB.
 
-## Problema aperto: output senza senso
+## Problema risolto: output senza senso (file corrotto)
 
-Con il comando che funziona, la risposta al prompt della mediana è solo una ripetizione di "legislação", "gros", "chy" fino agli 800 token. `reasoning_content` vuoto. Quindi i 18,1 token/s della misura sopra sono provvisori: sono la velocità di un calcolo che non dà risultati corretti.
+Con il primo download la risposta al prompt della mediana era solo una ripetizione di "legislação", "gros", "chy" fino agli 800 token, con `reasoning_content` vuoto. Per questo la misura sopra (18,1 token/s) va considerata provvisoria: è stata fatta sul file rotto.
 
-Test per isolare la causa (una modifica alla volta, prompt corto, `temperature` 0):
+| # | Cosa | Esito |
+|---|---|---|
+| T0 | `sha256sum` del file contro lo SHA256 su Hugging Face | primo download **diverso** (locale `6c82633e…`, Hugging Face `cbdf3fa9…`). Riscaricato da zero senza `-c`: ora **coincide** (`cbdf3fa9…`) |
+| T1 | `-fa off` | non servito |
+| T2 | solo CPU, `-ngl 0` | non servito |
 
-| # | Cosa | Se è a posto vuol dire | Esito |
-|---|---|---|---|
-| T0 | `sha256sum` del file contro lo SHA256 su Hugging Face | il file non è corrotto | **diverso**: locale `6c82633e…`, Hugging Face `cbdf3fa9…`. File da riscaricare da zero (senza `-c`) |
-| T1 | comando che funziona con `-fa off` | il problema era flash attention su GPU | |
-| T2 | solo CPU: `-ngl 0` | il problema è nel percorso GPU (CUDA) | |
+Con il file giusto e lo stesso comando, `scripts/prova.sh` dà un ragionamento sensato (capisce la domanda in italiano, sa che la risposta è Parigi). Velocità: 17,7 token/s in generazione, 36,7 token/s sul prompt (29 token). La risposta era vuota perché i 60 token di `max_tokens` sono finiti tutti nel ragionamento: portato `max_tokens` a 400 nello script.
 
-## Prossime prove (dopo aver risolto l'output)
+Regola: dopo ogni download, `sha256sum` prima di lanciare qualunque cosa. llama.cpp carica anche un file corrotto senza dire niente.
+
+Il log di `wget` restava vuoto (solo "nohup: input ignorato"): probabilmente è wget2, che non scrive l'avanzamento senza terminale. L'avanzamento si ricava dalla dimensione del file.
+
+## Prossime prove
 
 1. `-c 16384`: annota quanto sale la VRAM.
 2. `--n-cpu-moe 20`, poi 18, poi 16, finché la VRAM resta sotto 7,3 GB circa. Stima (non misurata): 0,6-0,7 GB per layer di esperti.
