@@ -1,0 +1,14 @@
+{
+  "name": "harness-giocattolo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Repo giocattolo per confrontare harness di agenti di coding sullo stesso compito.",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\"",
+    "cli": "node src/cli.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}
